@@ -97,80 +97,96 @@ export default function App() {
     return new Date().toISOString().split('T')[0];
   });
 
+  // Everything below is synced across devices via Firestore (with localStorage as a local
+  // cache/fallback when offline or when Firebase isn't configured) — all under the
+  // 'bangsaen_app_data/*' doc namespace, kept separate from the main tharnthong-ice app's
+  // 'app_data/*' docs even though both currently share the same Firebase project.
+
   // Ice Products State
-  const [products, setProducts] = useState<IceProduct[]>(() => {
-    const saved = localStorage.getItem('tharnthong_ice_products');
-    if (!saved) return INITIAL_ICE_PRODUCTS;
-    try {
-      const parsed: IceProduct[] = JSON.parse(saved);
-      return parsed.map((p) => {
+  const [products, setProducts] = useFirestoreSyncedState<IceProduct[]>(
+    'bangsaen_app_data/products',
+    'tharnthong_ice_products',
+    INITIAL_ICE_PRODUCTS
+  );
+  // Restore imageUrl for any product synced/saved from before images were bundled in.
+  useEffect(() => {
+    setProducts((prev) => {
+      const needsFix = prev.some((p) => !p.imageUrl);
+      if (!needsFix) return prev;
+      return prev.map((p) => {
+        if (p.imageUrl) return p;
         const initial = INITIAL_ICE_PRODUCTS.find(
           (init) => init.id === p.id || init.key === p.key || init.labelTh === p.labelTh
         );
-        return {
-          ...p,
-          imageUrl: p.imageUrl || initial?.imageUrl,
-        };
+        return initial?.imageUrl ? { ...p, imageUrl: initial.imageUrl } : p;
       });
-    } catch {
-      return INITIAL_ICE_PRODUCTS;
-    }
-  });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Delivery Routes State
-  const [routes, setRoutes] = useState<RouteItem[]>(() => {
-    const saved = localStorage.getItem('tharnthong_routes');
-    return saved ? JSON.parse(saved) : INITIAL_ROUTES;
-  });
+  const [routes, setRoutes] = useFirestoreSyncedState<RouteItem[]>(
+    'bangsaen_app_data/routes',
+    'tharnthong_routes',
+    INITIAL_ROUTES
+  );
 
   // Fixed Monthly Operating Expenses State
-  const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyFixedExpense[]>(() => {
-    const saved = localStorage.getItem('tharnthong_monthly_expenses');
-    return saved ? JSON.parse(saved) : INITIAL_MONTHLY_FIXED_EXPENSES;
-  });
+  const [monthlyExpenses, setMonthlyExpenses] = useFirestoreSyncedState<MonthlyFixedExpense[]>(
+    'bangsaen_app_data/monthlyExpenses',
+    'tharnthong_monthly_expenses',
+    INITIAL_MONTHLY_FIXED_EXPENSES
+  );
 
   // Truck Stock Loading & Return Records State
-  const [truckRecords, setTruckRecords] = useState<TruckStockRecord[]>(() => {
-    const saved = localStorage.getItem('tharnthong_truck_records');
-    return saved ? JSON.parse(saved) : INITIAL_TRUCK_RECORDS;
-  });
+  const [truckRecords, setTruckRecords] = useFirestoreSyncedState<TruckStockRecord[]>(
+    'bangsaen_app_data/truckRecords',
+    'tharnthong_truck_records',
+    INITIAL_TRUCK_RECORDS
+  );
 
   // Ice Suppliers (สายบางแสนซื้อน้ำแข็งมาขายต่อ ไม่ได้ผลิตเอง) & itemized daily purchase records
-  const [iceSuppliers, setIceSuppliers] = useState<IceSupplier[]>(() => {
-    const saved = localStorage.getItem('tharnthong_ice_suppliers');
-    if (!saved) return INITIAL_ICE_SUPPLIERS;
-    try {
-      const parsed: IceSupplier[] = JSON.parse(saved);
-      // Migration guard: suppliers saved before itemPrices existed won't have the field.
-      return parsed.map((s) => ({ ...s, itemPrices: s.itemPrices || {} }));
-    } catch {
-      return INITIAL_ICE_SUPPLIERS;
-    }
-  });
-  const [icePurchases, setIcePurchases] = useState<IcePurchaseRecord[]>(() => {
-    const saved = localStorage.getItem('tharnthong_ice_purchases');
-    return saved ? JSON.parse(saved) : INITIAL_ICE_PURCHASES;
-  });
-  const [icePurchaseItemTypes, setIcePurchaseItemTypes] = useState<IcePurchaseItemType[]>(() => {
-    const saved = localStorage.getItem('tharnthong_ice_purchase_item_types');
-    return saved ? JSON.parse(saved) : INITIAL_ICE_PURCHASE_ITEM_TYPES;
-  });
-
-  // Admin Management state (persisted)
-  const [admins, setAdmins] = useState<AdminUser[]>(() => {
-    const saved = localStorage.getItem('tharnthong_admins');
-    return saved ? JSON.parse(saved) : INITIAL_ADMINS;
-  });
-
-  // One-time migration: browsers that already had the old single-admin (ปอย only) list saved
-  // before the Owner/แผนกบัญชี split won't pick up INITIAL_ADMINS on their own, since saved
-  // state takes precedence. Force the new list in once per browser, then never touch it again
-  // so any admins added later through the UI aren't wiped out.
+  const [iceSuppliers, setIceSuppliers] = useFirestoreSyncedState<IceSupplier[]>(
+    'bangsaen_app_data/iceSuppliers',
+    'tharnthong_ice_suppliers',
+    INITIAL_ICE_SUPPLIERS
+  );
+  // Migration guard: suppliers synced/saved before itemPrices existed won't have the field.
   useEffect(() => {
-    const MIGRATION_KEY = 'tharnthong_admins_migration_owner_v2';
-    if (!localStorage.getItem(MIGRATION_KEY)) {
+    setIceSuppliers((prev) => {
+      const needsFix = prev.some((s) => !s.itemPrices);
+      return needsFix ? prev.map((s) => ({ ...s, itemPrices: s.itemPrices || {} })) : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [icePurchases, setIcePurchases] = useFirestoreSyncedState<IcePurchaseRecord[]>(
+    'bangsaen_app_data/icePurchases',
+    'tharnthong_ice_purchases',
+    INITIAL_ICE_PURCHASES
+  );
+  const [icePurchaseItemTypes, setIcePurchaseItemTypes] = useFirestoreSyncedState<IcePurchaseItemType[]>(
+    'bangsaen_app_data/icePurchaseItemTypes',
+    'tharnthong_ice_purchase_item_types',
+    INITIAL_ICE_PURCHASE_ITEM_TYPES
+  );
+
+  // Admin Management state
+  const [admins, setAdmins] = useFirestoreSyncedState<AdminUser[]>(
+    'bangsaen_app_data/admins',
+    'tharnthong_admins',
+    INITIAL_ADMINS
+  );
+
+  // Self-healing migration: any device/browser that still has the old single-admin (ปอย only,
+  // pre Owner/แผนกบัญชี split) list cached — whether in localStorage or as what got seeded to
+  // Firestore first — gets corrected back to INITIAL_ADMINS. Content-based (not a one-time flag)
+  // so it works correctly across devices sharing the same synced doc: it's a no-op forever once
+  // an accountant-role admin exists, so admins added later through the UI are never touched.
+  useEffect(() => {
+    const hasAccountant = admins.some((a) => a.roleLevel === 'accountant');
+    if (!hasAccountant) {
       setAdmins(INITIAL_ADMINS);
-      localStorage.setItem(MIGRATION_KEY, 'done');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -180,34 +196,35 @@ export default function App() {
     return sessionStorage.getItem(SESSION_KEY);
   });
 
-  // App State with localStorage persistence
-  const [stats, setStats] = useState<OperationSummaryStats>(() => {
-    const saved = localStorage.getItem('tharnthong_stats');
-    return saved ? JSON.parse(saved) : INITIAL_SUMMARY_STATS;
-  });
+  // App State
+  const [stats, setStats] = useFirestoreSyncedState<OperationSummaryStats>(
+    'bangsaen_app_data/stats',
+    'tharnthong_stats',
+    INITIAL_SUMMARY_STATS
+  );
 
-  const [summaryData, setSummaryData] = useState<SummaryOperationsData>(() => {
-    const saved = localStorage.getItem('tharnthong_summary');
-    return saved ? JSON.parse(saved) : INITIAL_OVERALL_SUMMARY;
-  });
+  const [summaryData, setSummaryData] = useFirestoreSyncedState<SummaryOperationsData>(
+    'bangsaen_app_data/summaryData',
+    'tharnthong_summary',
+    INITIAL_OVERALL_SUMMARY
+  );
 
-  // Synced to Firestore (cross-device) with localStorage as a local cache/fallback.
   const [recentDeliveries, setRecentDeliveries] = useFirestoreSyncedState<DeliveryRecord[]>(
-    'app_data/deliveries',
+    'bangsaen_app_data/deliveries',
     'tharnthong_deliveries',
     INITIAL_RECENT_DELIVERIES
   );
 
   const [customers, setCustomers] = useFirestoreSyncedState<CustomerAccount[]>(
-    'app_data/customers',
+    'bangsaen_app_data/customers',
     'tharnthong_customers',
     INITIAL_CUSTOMERS
   );
 
-  // Ongoing merge (safe to run every load): browsers that already had routes/customers saved
-  // before a new route was added in code (e.g. สายไพรบูรณ์) won't pick up the addition on their
-  // own, since saved state takes precedence over INITIAL_*. This only adds what's missing by id
-  // — it never touches or removes anything already saved.
+  // Ongoing merge (safe to run every load): browsers/devices that already had routes/customers
+  // synced before a new route was added in code (e.g. สายไพรบูรณ์) won't pick up the addition on
+  // their own, since synced state takes precedence over INITIAL_*. This only adds what's missing
+  // by id — it never touches or removes anything already saved.
   useEffect(() => {
     setRoutes((prev) => {
       const existingIds = new Set(prev.map((r) => r.id));
@@ -222,70 +239,83 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [expenses, setExpenses] = useState<ExpenseItem[]>(() => {
-    const saved = localStorage.getItem('tharnthong_expenses');
-    return saved ? JSON.parse(saved) : INITIAL_EXPENSES;
-  });
+  const [expenses, setExpenses] = useFirestoreSyncedState<ExpenseItem[]>(
+    'bangsaen_app_data/expenses',
+    'tharnthong_expenses',
+    INITIAL_EXPENSES
+  );
 
-  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>(() => {
-    const saved = localStorage.getItem('tharnthong_expense_categories');
-    return saved ? JSON.parse(saved) : INITIAL_EXPENSE_CATEGORIES;
-  });
+  const [expenseCategories, setExpenseCategories] = useFirestoreSyncedState<ExpenseCategory[]>(
+    'bangsaen_app_data/expenseCategories',
+    'tharnthong_expense_categories',
+    INITIAL_EXPENSE_CATEGORIES
+  );
 
   // Payment Status Labels (editable by owner/accountant)
-  const [statusLabels, setStatusLabels] = useState<PaymentStatusLabels>(() => {
-    const saved = localStorage.getItem('tharnthong_status_labels');
-    return saved ? { ...DEFAULT_PAYMENT_STATUS_LABELS, ...JSON.parse(saved) } : DEFAULT_PAYMENT_STATUS_LABELS;
-  });
+  const [statusLabels, setStatusLabels] = useFirestoreSyncedState<PaymentStatusLabels>(
+    'bangsaen_app_data/statusLabels',
+    'tharnthong_status_labels',
+    DEFAULT_PAYMENT_STATUS_LABELS
+  );
+  // Fill in any label keys added after a device/doc was first saved.
+  useEffect(() => {
+    setStatusLabels((prev) => ({ ...DEFAULT_PAYMENT_STATUS_LABELS, ...prev }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Warehouse Items & Logs State
-  const [warehouseItems, setWarehouseItems] = useState(() => {
-    const saved = localStorage.getItem('tharnthong_warehouse_items');
-    if (!saved) return INITIAL_WAREHOUSE_ITEMS;
-    try {
-      const parsed: WarehouseItem[] = JSON.parse(saved);
-      return parsed.filter(
-        (i) => i.category !== 'น้ำแข็งสำเร็จรูป/ห้องเย็น' && i.category !== 'ถุง/บรรจุภัณฑ์'
-      );
-    } catch {
-      return INITIAL_WAREHOUSE_ITEMS;
-    }
-  });
+  const [warehouseItems, setWarehouseItems] = useFirestoreSyncedState<WarehouseItem[]>(
+    'bangsaen_app_data/warehouseItems',
+    'tharnthong_warehouse_items',
+    INITIAL_WAREHOUSE_ITEMS
+  );
+  useEffect(() => {
+    setWarehouseItems((prev) =>
+      prev.filter((i) => i.category !== 'น้ำแข็งสำเร็จรูป/ห้องเย็น' && i.category !== 'ถุง/บรรจุภัณฑ์')
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const [warehouseLogs, setWarehouseLogs] = useState(() => {
-    const saved = localStorage.getItem('tharnthong_warehouse_logs');
-    return saved ? JSON.parse(saved) : INITIAL_WAREHOUSE_LOGS;
-  });
+  const [warehouseLogs, setWarehouseLogs] = useFirestoreSyncedState<WarehouseLog[]>(
+    'bangsaen_app_data/warehouseLogs',
+    'tharnthong_warehouse_logs',
+    INITIAL_WAREHOUSE_LOGS
+  );
 
   // Employee Master List State
-  const [employees, setEmployees] = useState<Employee[]>(() => {
-    const saved = localStorage.getItem('tharnthong_employees');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [employees, setEmployees] = useFirestoreSyncedState<Employee[]>(
+    'bangsaen_app_data/employees',
+    'tharnthong_employees',
+    []
+  );
 
   // Attendance Records State
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
-    const saved = localStorage.getItem('tharnthong_attendance');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [attendanceRecords, setAttendanceRecords] = useFirestoreSyncedState<AttendanceRecord[]>(
+    'bangsaen_app_data/attendanceRecords',
+    'tharnthong_attendance',
+    []
+  );
 
   // Employee Loans (ยืมเงิน) State
-  const [employeeLoans, setEmployeeLoans] = useState<EmployeeLoan[]>(() => {
-    const saved = localStorage.getItem('tharnthong_employee_loans');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [employeeLoans, setEmployeeLoans] = useFirestoreSyncedState<EmployeeLoan[]>(
+    'bangsaen_app_data/employeeLoans',
+    'tharnthong_employee_loans',
+    []
+  );
 
   // Vehicle Master List State
-  const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
-    const saved = localStorage.getItem('tharnthong_vehicles');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [vehicles, setVehicles] = useFirestoreSyncedState<Vehicle[]>(
+    'bangsaen_app_data/vehicles',
+    'tharnthong_vehicles',
+    []
+  );
 
   // Vehicle Fuel/Repair Log State
-  const [vehicleLogEntries, setVehicleLogEntries] = useState<VehicleLogEntry[]>(() => {
-    const saved = localStorage.getItem('tharnthong_vehicle_logs');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [vehicleLogEntries, setVehicleLogEntries] = useFirestoreSyncedState<VehicleLogEntry[]>(
+    'bangsaen_app_data/vehicleLogEntries',
+    'tharnthong_vehicle_logs',
+    []
+  );
 
   // Modals state
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
@@ -308,88 +338,8 @@ export default function App() {
   const activeAdminObj = admins.find((a) => a.id === activeAdminId) || null;
   const activeAdminName = activeAdminObj?.name || '';
 
-  // Sync state to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('tharnthong_ice_products', JSON.stringify(products));
-  }, [products]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_routes', JSON.stringify(routes));
-  }, [routes]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_monthly_expenses', JSON.stringify(monthlyExpenses));
-  }, [monthlyExpenses]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_truck_records', JSON.stringify(truckRecords));
-  }, [truckRecords]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_ice_suppliers', JSON.stringify(iceSuppliers));
-  }, [iceSuppliers]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_ice_purchases', JSON.stringify(icePurchases));
-  }, [icePurchases]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_ice_purchase_item_types', JSON.stringify(icePurchaseItemTypes));
-  }, [icePurchaseItemTypes]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_admins', JSON.stringify(admins));
-  }, [admins]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_stats', JSON.stringify(stats));
-  }, [stats]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_summary', JSON.stringify(summaryData));
-  }, [summaryData]);
-
-  // recentDeliveries and customers persist via useFirestoreSyncedState above (localStorage + Firestore).
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_expenses', JSON.stringify(expenses));
-  }, [expenses]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_expense_categories', JSON.stringify(expenseCategories));
-  }, [expenseCategories]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_status_labels', JSON.stringify(statusLabels));
-  }, [statusLabels]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_warehouse_items', JSON.stringify(warehouseItems));
-  }, [warehouseItems]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_warehouse_logs', JSON.stringify(warehouseLogs));
-  }, [warehouseLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_employees', JSON.stringify(employees));
-  }, [employees]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_attendance', JSON.stringify(attendanceRecords));
-  }, [attendanceRecords]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_employee_loans', JSON.stringify(employeeLoans));
-  }, [employeeLoans]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_vehicles', JSON.stringify(vehicles));
-  }, [vehicles]);
-
-  useEffect(() => {
-    localStorage.setItem('tharnthong_vehicle_logs', JSON.stringify(vehicleLogEntries));
-  }, [vehicleLogEntries]);
+  // All persisted state above now syncs via useFirestoreSyncedState (Firestore + localStorage
+  // cache); nothing left here needs a manual localStorage.setItem effect.
 
   // Reset to a permitted tab if the logged-in admin's role can no longer see the active one
   useEffect(() => {
