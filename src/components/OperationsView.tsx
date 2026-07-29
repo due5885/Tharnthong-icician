@@ -22,6 +22,7 @@ interface OperationsViewProps {
   truckRecords: TruckStockRecord[];
   roleLevel: RoleLevel;
   onAddDelivery: (delivery: Omit<DeliveryRecord, 'id'>, quantities: IceQuantity) => void;
+  onDeleteDelivery: (id: string) => void;
   onSaveTruckRecord: (record: Omit<TruckStockRecord, 'id' | 'updatedAt'>) => void;
   onOpenProductManager: () => void;
   onOpenEmployeeManager: () => void;
@@ -40,6 +41,7 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
   truckRecords,
   roleLevel,
   onAddDelivery,
+  onDeleteDelivery,
   onSaveTruckRecord,
   onOpenProductManager,
   onOpenEmployeeManager,
@@ -505,12 +507,17 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                 <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-center">
                   สถานะ
                 </th>
+                {roleLevel !== 'staff' && (
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-center">
+                    ลบ
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#D2E0EB] text-sm">
               {displayedDeliveries.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-[#64748B]">
+                  <td colSpan={roleLevel !== 'staff' ? 6 : 5} className="text-center py-8 text-[#64748B]">
                     ยังไม่มีรายการส่งน้ำแข็งในวันนี้
                   </td>
                 </tr>
@@ -559,6 +566,21 @@ export const OperationsView: React.FC<OperationsViewProps> = ({
                         </span>
                       )}
                     </td>
+                    {roleLevel !== 'staff' && (
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => {
+                            if (confirm(`ลบรายการส่งของ "${item.customerName}" (${item.time}) ใช่ไหม?`)) {
+                              onDeleteDelivery(item.id);
+                            }
+                          }}
+                          className="w-8 h-8 rounded-lg bg-[#FEF2F2] hover:bg-[#FEE2E2] text-[#DC2626] flex items-center justify-center cursor-pointer mx-auto"
+                          title="ลบรายการ"
+                        >
+                          <span className="material-symbols-outlined text-base">delete</span>
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

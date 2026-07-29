@@ -494,6 +494,11 @@ export default function App() {
     );
   };
 
+  // Remove an erroneously-entered (or test) delivery/bill history entry
+  const handleDeleteDelivery = (id: string) => {
+    setRecentDeliveries((prev) => prev.filter((d) => d.id !== id));
+  };
+
   // Build a "โม่(5), หลอดเล็ก(2)" style summary text from a customer's current quantities
   const buildCustomerSummaryText = (customer: CustomerAccount): string => {
     const parts: string[] = [];
@@ -881,6 +886,7 @@ export default function App() {
             truckRecords={truckRecords}
             roleLevel={roleLevel}
             onAddDelivery={handleAddDelivery}
+            onDeleteDelivery={handleDeleteDelivery}
             onSaveTruckRecord={handleSaveTruckRecord}
             onOpenProductManager={() => setIsProductManagerOpen(true)}
             onOpenEmployeeManager={() => setIsEmployeeManagerOpen(true)}
