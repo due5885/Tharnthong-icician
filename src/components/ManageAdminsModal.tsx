@@ -47,8 +47,8 @@ export const ManageAdminsModal: React.FC<ManageAdminsModalProps> = ({
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    if (newPin.length < 4 || isNaN(Number(newPin))) {
-      onShowToast('รหัส PIN ต้องเป็นตัวเลขอย่างน้อย 4 หลัก');
+    if (newPin.length !== 6 || isNaN(Number(newPin))) {
+      onShowToast('รหัส PIN ต้องเป็นตัวเลข 6 หลัก');
       return;
     }
     onAddAdmin(newName.trim(), newRole.trim() || 'พนักงาน', newRoleLevel, newPin);
@@ -75,8 +75,8 @@ export const ManageAdminsModal: React.FC<ManageAdminsModalProps> = ({
   };
 
   const handleSavePin = (id: string) => {
-    if (pinDraft.length < 4 || isNaN(Number(pinDraft))) {
-      onShowToast('รหัส PIN ต้องเป็นตัวเลขอย่างน้อย 4 หลัก');
+    if (pinDraft.length !== 6 || isNaN(Number(pinDraft))) {
+      onShowToast('รหัส PIN ต้องเป็นตัวเลข 6 หลัก');
       return;
     }
     onUpdateAdmin(id, { pin: pinDraft });
@@ -175,8 +175,8 @@ export const ManageAdminsModal: React.FC<ManageAdminsModalProps> = ({
                   <div className="mt-2 pt-2 border-t border-[#E2E8F0] flex items-center gap-2">
                     <input
                       type="password"
-                      maxLength={12}
-                      placeholder="PIN ใหม่ (4+ หลัก)"
+                      maxLength={6}
+                      placeholder="PIN ใหม่ (6 หลัก)"
                       value={pinDraft}
                       onChange={(e) => setPinDraft(e.target.value)}
                       className="w-32 px-3 py-1.5 rounded-lg border border-[#0284C7] text-sm text-center font-bold data-mono bg-white outline-none"
@@ -235,8 +235,8 @@ export const ManageAdminsModal: React.FC<ManageAdminsModalProps> = ({
             </select>
             <input
               type="password"
-              maxLength={12}
-              placeholder="PIN (4+ หลัก)"
+              maxLength={6}
+              placeholder="PIN (6 หลัก)"
               value={newPin}
               onChange={(e) => setNewPin(e.target.value)}
               className="px-3 py-2 rounded-xl border border-[#D2E0EB] text-sm text-center font-bold data-mono focus:ring-2 focus:ring-[#1E3A5F]"
