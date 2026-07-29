@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    /* Elder-friendly base scale: bumps every rem-based Tailwind size
+       (text, spacing, icons) app-wide without touching each component. */
+    font-size: 119%;
+  }
+
+  body {
+    font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #F2F6FA;
+    color: #1E293B;
+    min-height: max(884px, 100dvh);
+    line-height: 1.5;
+  }
+}
+
+.data-mono {
+  font-family: 'IBM Plex Sans', monospace;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+.material-symbols-outlined.fill-1 {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Google's Material Symbols stylesheet ships an unlayered `.material-symbols-outlined { font-size: 24px }`
+   rule, which (per CSS cascade layers) beats any Tailwind text-size utility no matter the specificity —
+   so icons would otherwise be silently pinned to 24px regardless of text-lg/text-2xl/etc. These
+   higher-specificity, also-unlayered overrides restore per-instance sizing (and let icons scale with
+   the root font-size bump above). */
+.material-symbols-outlined.text-xs { font-size: 0.75rem; }
+.material-symbols-outlined.text-sm { font-size: 0.875rem; }
+.material-symbols-outlined.text-base { font-size: 1rem; }
+.material-symbols-outlined.text-lg { font-size: 1.125rem; }
+.material-symbols-outlined.text-xl { font-size: 1.25rem; }
+.material-symbols-outlined.text-2xl { font-size: 1.5rem; }
+.material-symbols-outlined.text-3xl { font-size: 1.875rem; }
+.material-symbols-outlined.text-4xl { font-size: 2.25rem; }
+.material-symbols-outlined.text-5xl { font-size: 3rem; }
+
+/* Custom Zebra Stripping - Ice Soft Tones */
+.zebra-table tr:nth-child(even) {
+  background-color: #EBF1F7;
+}
+
+.zebra-row:nth-child(even) {
+  background-color: #EBF1F7;
+}
+
+/* Hide scrollbar for clean UI */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Slim, visible scrollbar — used on wide tables so users can see/drag past the fold */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #94A3B8 transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #94A3B8;
+  border-radius: 8px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #64748B;
+}
+
+/* Stepper input arrow hide */
+.stepper-input::-webkit-outer-spin-button,
+.stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.active-scale:active {
+  transform: scale(0.95);
+}
+
+
