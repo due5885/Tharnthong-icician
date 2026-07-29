@@ -27,7 +27,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, ro
   const tabs = allTabs.filter((t) => canAccessTab(roleLevel, t.id));
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-50 bg-[#EBF2F7] border-t border-[#D2E0EB] shadow-md flex justify-around items-center h-20 px-2 pb-safe">
+    <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50 bg-[#EBF2F7] border-t border-[#D2E0EB] shadow-md flex items-center h-20 px-2 pb-safe overflow-x-auto thin-scrollbar">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
 
@@ -35,7 +35,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, ro
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`flex flex-col items-center justify-center transition-all duration-150 active:scale-90 px-4 py-1.5 rounded-full cursor-pointer relative ${
+            className={`flex flex-col items-center justify-center shrink-0 min-w-[4.25rem] transition-all duration-150 active:scale-90 px-3 py-1.5 rounded-full cursor-pointer relative ${
               isActive
                 ? 'bg-[#1E3A5F] text-white font-semibold shadow-xs'
                 : 'text-[#1E293B] hover:bg-[#DCE7F0] opacity-80'
@@ -50,7 +50,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, ro
                 {tab.icon}
               </span>
             </div>
-            <span className="text-xs font-medium tracking-wide mt-0.5">
+            <span className="text-xs font-medium tracking-wide mt-0.5 whitespace-nowrap">
               {tab.label}
             </span>
           </button>
