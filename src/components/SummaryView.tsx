@@ -201,8 +201,8 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       <section className="bg-white p-4 sm:p-5 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl md:text-2xl font-bold text-[#1E3A5F] flex items-center gap-2 font-sans">
-              <span className="material-symbols-outlined text-[#0284C7]">analytics</span>
+            <h2 className="text-lg md:text-xl font-bold text-[#1E3A5F] flex items-center gap-2 font-sans">
+              <span className="material-symbols-outlined text-lg text-[#0284C7]">analytics</span>
               สรุปภาพรวมผลการดำเนินงาน
             </h2>
             <p className="text-xs text-[#64748B] mt-0.5">
@@ -267,67 +267,68 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       </section>
 
       {/* Top Main Bento Overview Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Total Revenue Big Card */}
-        <div className="lg:col-span-2 bg-[#1E3A5F] text-white p-6 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden min-h-[190px]">
+      <div className="space-y-4">
+        {/* Total Revenue Big Card — full width so it doesn't fight the product cards for room */}
+        <div className="bg-[#1E3A5F] text-white p-5 rounded-2xl shadow-xs flex flex-col justify-between relative overflow-hidden min-h-[150px]">
           <div className="absolute top-2 right-2 p-2 opacity-10 pointer-events-none">
-            <span className="material-symbols-outlined text-9xl fill-1">payments</span>
+            <span className="material-symbols-outlined text-7xl fill-1">payments</span>
           </div>
 
           <div>
-            <p className="text-xs font-bold tracking-widest uppercase opacity-80 text-[#7DD3FC]">
+            <p className="text-[11px] font-bold tracking-widest uppercase opacity-80 text-[#7DD3FC]">
               {reportType === 'daily' ? 'TOTAL REVENUE (รายรับรวมวันนี้)' : 'MONTHLY REVENUE (รายรับรวมเดือนนี้)'}
             </p>
-            <h3 className="text-3xl md:text-4xl font-bold mt-1 tracking-tight data-mono">
+            <h3 className="text-2xl md:text-3xl font-bold mt-1 tracking-tight data-mono">
               ฿ {computedRevenue.toLocaleString()}.00
             </h3>
           </div>
 
-          <div className="flex items-center gap-6 mt-6 pt-4 border-t border-white/20">
+          <div className="flex items-center gap-6 mt-4 pt-3 border-t border-white/20">
             <div className="flex flex-col">
-              <span className="text-xs opacity-75 font-medium">เงินสด (Cash)</span>
-              <span className="text-lg md:text-xl font-bold text-[#7DD3FC] data-mono">
+              <span className="text-[11px] opacity-75 font-medium">เงินสด (Cash)</span>
+              <span className="text-base md:text-lg font-bold text-[#7DD3FC] data-mono">
                 ฿ {computedCashRevenue.toLocaleString()}
               </span>
             </div>
             <div className="w-px h-8 bg-white/20"></div>
             <div className="flex flex-col">
-              <span className="text-xs opacity-75 font-medium">เครดิต/ค้างชำระ (Credit)</span>
-              <span className="text-lg md:text-xl font-bold text-[#BAE6FD] data-mono">
+              <span className="text-[11px] opacity-75 font-medium">เครดิต/ค้างชำระ (Credit)</span>
+              <span className="text-base md:text-lg font-bold text-[#BAE6FD] data-mono">
                 ฿ {computedCreditRevenue.toLocaleString()}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Top Right Summary Metric Cards for each product */}
-        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+        {/* Product quantity cards — auto-fit width so each card always gets enough room for its
+            full Thai name (a fixed column count went down to ~42px per label and clipped everything) */}
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2.5">
           {products.map((prod) => {
             const totalQty = productTotals[prod.key] || 0;
             return (
               <div
                 key={prod.id}
-                className="bg-white border border-[#D2E0EB] p-3 rounded-2xl flex flex-col justify-between hover:border-[#0284C7] transition-all shadow-xs"
+                className="bg-white border border-[#D2E0EB] p-2.5 rounded-xl flex flex-col justify-between hover:border-[#0284C7] transition-all shadow-xs"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {prod.imageUrl ? (
                     <img
                       src={prod.imageUrl}
                       alt={prod.labelTh}
-                      className="w-7 h-7 rounded-lg object-cover border border-[#CBD5E1] shrink-0"
+                      className="w-6 h-6 rounded-lg object-cover border border-[#CBD5E1] shrink-0"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <span className="material-symbols-outlined text-[#0284C7] text-lg">
+                    <span className="material-symbols-outlined text-[#0284C7] text-base shrink-0">
                       {prod.icon || 'ac_unit'}
                     </span>
                   )}
-                  <span className="text-xs font-bold text-[#1E3A5F] truncate">
+                  <span className="text-[11px] font-bold text-[#1E3A5F] whitespace-nowrap">
                     {prod.labelTh}
                   </span>
                 </div>
-                <div className="flex items-end justify-between mt-2">
-                  <span className="text-xl font-bold text-[#1E3A5F] data-mono">
+                <div className="flex items-end justify-between mt-1.5">
+                  <span className="text-lg font-bold text-[#1E3A5F] data-mono">
                     {totalQty.toLocaleString()}
                   </span>
                   <span className="text-[10px] font-bold text-[#0369A1] bg-[#E0F2FE] px-1.5 py-0.5 rounded-full">
@@ -341,13 +342,13 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       </div>
 
       {/* สรุปยอดขายแยกตามสายส่ง */}
-      <section className="bg-white p-5 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
+      <section className="bg-white p-4 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
         <div className="flex items-center gap-2.5 pb-2 border-b border-[#E2E8F0]">
-          <div className="w-10 h-10 rounded-2xl bg-[#E0F2FE] flex items-center justify-center text-[#0284C7]">
-            <span className="material-symbols-outlined text-xl">alt_route</span>
+          <div className="w-8 h-8 rounded-xl bg-[#E0F2FE] flex items-center justify-center text-[#0284C7]">
+            <span className="material-symbols-outlined text-lg">alt_route</span>
           </div>
           <div>
-            <h3 className="font-bold text-base text-[#1E3A5F]">สรุปยอดขายแยกตามสายส่ง</h3>
+            <h3 className="font-bold text-sm text-[#1E3A5F]">สรุปยอดขายแยกตามสายส่ง</h3>
             <p className="text-xs text-[#64748B]">แต่ละสายวันนี้ขายได้เท่าไหร่ แยกเงินสด/เครดิต/ค้างจ่าย</p>
           </div>
         </div>
@@ -367,7 +368,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
                   <th className="py-2 font-bold text-right">บิล</th>
                 </tr>
               </thead>
-              <tbody className="text-sm divide-y divide-[#F1F5F9]">
+              <tbody className="text-xs divide-y divide-[#F1F5F9]">
                 {routeSalesBreakdown.map((r) => (
                   <tr key={r.routeName} className="hover:bg-[#F8FAFC]">
                     <td className="py-2.5 font-bold text-[#1E3A5F]">{r.routeName}</td>
@@ -388,7 +389,7 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-[#CBD5E1] font-bold text-sm">
+                <tr className="border-t-2 border-[#CBD5E1] font-bold text-xs">
                   <td className="py-2.5 text-[#1E3A5F]">รวมทั้งหมด</td>
                   <td className="py-2.5 text-right data-mono text-[#0284C7]">
                     ฿{routeSalesBreakdown.reduce((s, r) => s + r.cash, 0).toLocaleString()}
@@ -415,14 +416,14 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       {/* Two-column: สายย่อย recap + รับชำระเงินเครดิต */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* สายย่อยจ่ายค่าน้ำแข็งมาเท่าไหร่ */}
-        <section className="bg-white p-5 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
+        <section className="bg-white p-4 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#ECFDF5] flex items-center justify-center text-[#059669]">
-                <span className="material-symbols-outlined text-xl">account_balance_wallet</span>
+              <div className="w-8 h-8 rounded-xl bg-[#ECFDF5] flex items-center justify-center text-[#059669]">
+                <span className="material-symbols-outlined text-lg">account_balance_wallet</span>
               </div>
               <div>
-                <h3 className="font-bold text-base text-[#1E3A5F]">รับเงินสายย่อย</h3>
+                <h3 className="font-bold text-sm text-[#1E3A5F]">รับเงินสายย่อย</h3>
                 <p className="text-xs text-[#64748B]">สายย่อยจ่ายค่าน้ำแข็งมาเท่าไหร่</p>
               </div>
             </div>
@@ -463,14 +464,14 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
         </section>
 
         {/* รับชำระเงินเครดิต */}
-        <section className="bg-white p-5 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
+        <section className="bg-white p-4 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#F1F5F9] flex items-center justify-center text-[#475569]">
-                <span className="material-symbols-outlined text-xl">event_repeat</span>
+              <div className="w-8 h-8 rounded-xl bg-[#F1F5F9] flex items-center justify-center text-[#475569]">
+                <span className="material-symbols-outlined text-lg">event_repeat</span>
               </div>
               <div>
-                <h3 className="font-bold text-base text-[#1E3A5F]">รับชำระเงินเครดิต</h3>
+                <h3 className="font-bold text-sm text-[#1E3A5F]">รับชำระเงินเครดิต</h3>
                 <p className="text-xs text-[#64748B]">ลูกค้าเครดิตที่จ่ายยอดค้างเข้ามาช่วงนี้</p>
               </div>
             </div>
@@ -501,14 +502,14 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       </div>
 
       {/* รายละเอียดค่าใช้จ่าย */}
-      <section className="bg-white p-5 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
+      <section className="bg-white p-4 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
         <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-[#FEE2E2] flex items-center justify-center text-[#DC2626]">
-              <span className="material-symbols-outlined text-xl">receipt_long</span>
+            <div className="w-8 h-8 rounded-xl bg-[#FEE2E2] flex items-center justify-center text-[#DC2626]">
+              <span className="material-symbols-outlined text-lg">receipt_long</span>
             </div>
             <div>
-              <h3 className="font-bold text-base text-[#1E3A5F]">รายละเอียดค่าใช้จ่าย</h3>
+              <h3 className="font-bold text-sm text-[#1E3A5F]">รายละเอียดค่าใช้จ่าย</h3>
               <p className="text-xs text-[#64748B]">มีรายจ่ายอะไรบ้างในช่วงเวลานี้</p>
             </div>
           </div>
@@ -552,14 +553,14 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       </section>
 
       {/* Ice Purchase Cost — computed from itemized purchase records (สายบางแสนซื้อน้ำแข็งจากผู้ขายมาขายต่อ) */}
-      <section className="bg-white p-5 rounded-2xl border border-[#BAE6FD] shadow-xs space-y-3">
+      <section className="bg-white p-4 rounded-2xl border border-[#BAE6FD] shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-[#E0F2FE] flex items-center justify-center text-[#0284C7]">
-              <span className="material-symbols-outlined text-xl">shopping_cart</span>
+            <div className="w-8 h-8 rounded-xl bg-[#E0F2FE] flex items-center justify-center text-[#0284C7]">
+              <span className="material-symbols-outlined text-lg">shopping_cart</span>
             </div>
             <div>
-              <h3 className="font-bold text-base text-[#1E3A5F]">
+              <h3 className="font-bold text-sm text-[#1E3A5F]">
                 ต้นทุนค่าน้ำแข็งที่ซื้อมา
               </h3>
               <p className="text-xs text-[#64748B]">
@@ -569,9 +570,9 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-start sm:self-auto">
-            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#CBD5E1] px-3 py-2 rounded-2xl">
-              <span className="font-bold text-lg text-[#0284C7] data-mono">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#CBD5E1] px-3 py-1.5 rounded-xl">
+              <span className="font-bold text-base text-[#0284C7] data-mono">
                 ฿{icePurchaseCost.toLocaleString()}
               </span>
             </div>
@@ -588,14 +589,14 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
 
       {/* Fixed Operating Expenses Manager Section — monthly only (เงินเดือน, ค่าเช่าที่, ค่าน้ำค่าไฟ) */}
       {reportType === 'monthly' && (
-        <section className="bg-white p-5 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-4">
+        <section className="bg-white p-4 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#E2E8F0]">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[#DC2626] text-xl">
                 receipt_long
               </span>
               <div>
-                <h3 className="font-bold text-base text-[#1E3A5F]">
+                <h3 className="font-bold text-sm text-[#1E3A5F]">
                   รายการค่าใช้จ่ายดำเนินงานประจำ (เงินเดือน, ค่าเช่า, ค่าน้ำไฟ)
                 </h3>
                 <p className="text-xs text-[#64748B]">
@@ -711,53 +712,53 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
 
       {/* Net Profit & Loss Financial Statement — owner only, staff/accountant share this screen */}
       {canViewNetProfit(roleLevel) && (
-        <section className="bg-white p-6 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-4">
-          <h3 className="font-bold text-lg text-[#1E3A5F] flex items-center gap-2 font-sans">
-            <span className="material-symbols-outlined text-[#0284C7]">account_balance</span>
+        <section className="bg-white p-5 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
+          <h3 className="font-bold text-base text-[#1E3A5F] flex items-center gap-2 font-sans">
+            <span className="material-symbols-outlined text-lg text-[#0284C7]">account_balance</span>
             สรุปงบกำไร - ขาดทุนสุทธิ ({reportType === 'daily' ? 'รายวัน' : 'รายเดือน'})
           </h3>
 
-          <div className="space-y-3 bg-[#F8FAFC] p-4 rounded-2xl border border-[#E2E8F0]">
+          <div className="space-y-2.5 bg-[#F8FAFC] p-3.5 rounded-2xl border border-[#E2E8F0]">
             {/* Row 1: Total Revenue */}
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center text-xs">
               <span className="font-semibold text-[#1E293B]">1. รายรับรวมจากการขาย:</span>
-              <span className="font-bold text-lg text-[#0284C7] data-mono">
+              <span className="font-bold text-base text-[#0284C7] data-mono">
                 + ฿ {computedRevenue.toLocaleString()}
               </span>
             </div>
 
             {/* Row 2: Ice Purchase Cost */}
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center text-xs">
               <span className="font-semibold text-[#64748B]">
                 2. (-) ต้นทุนค่าน้ำแข็งที่สั่งซื้อมา:
               </span>
-              <span className="font-bold text-base text-[#DC2626] data-mono">
+              <span className="font-bold text-sm text-[#DC2626] data-mono">
                 - ฿ {(icePurchaseCost || 0).toLocaleString()}
               </span>
             </div>
 
             {/* Row 3: Recorded Expenses */}
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center text-xs">
               <span className="font-semibold text-[#64748B]">
                 3. (-) ค่าใช้จ่ายรวมทั้งหมด{reportType === 'monthly' ? ' (รายวัน + ประจำเดือน)' : ''}:
               </span>
-              <span className="font-bold text-base text-[#DC2626] data-mono">
+              <span className="font-bold text-sm text-[#DC2626] data-mono">
                 - ฿ {grandTotalExpense.toLocaleString()}
               </span>
             </div>
 
-            <div className="pt-3 border-t border-[#CBD5E1] flex justify-between items-center">
+            <div className="pt-2.5 border-t border-[#CBD5E1] flex justify-between items-center">
               <div>
-                <span className="text-xs font-bold text-[#1E3A5F] uppercase block">
+                <span className="text-[11px] font-bold text-[#1E3A5F] uppercase block">
                   กำไรสุทธิคงเหลือจริง (NET PROFIT)
                 </span>
-                <span className="text-[11px] text-[#64748B]">
+                <span className="text-[10px] text-[#64748B]">
                   (รายรับ - ต้นทุนน้ำแข็ง - ค่าใช้จ่าย)
                 </span>
               </div>
 
               <span
-                className={`text-2xl md:text-3xl font-bold data-mono ${
+                className={`text-xl md:text-2xl font-bold data-mono ${
                   calculatedNetProfit >= 0 ? 'text-[#0284C7]' : 'text-[#DC2626]'
                 }`}
               >
@@ -769,28 +770,28 @@ export const SummaryView: React.FC<SummaryViewProps> = ({
       )}
 
       {/* Cash-in-hand reconciliation — everyone who handles cash needs this, so it stays visible to all roles */}
-      <section className="bg-white p-6 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-3">
-        <h3 className="font-bold text-lg text-[#1E3A5F] flex items-center gap-2 font-sans">
-          <span className="material-symbols-outlined text-[#059669]">account_balance_wallet</span>
+      <section className="bg-white p-5 rounded-2xl border border-[#D2E0EB] shadow-xs space-y-2.5">
+        <h3 className="font-bold text-base text-[#1E3A5F] flex items-center gap-2 font-sans">
+          <span className="material-symbols-outlined text-lg text-[#059669]">account_balance_wallet</span>
           เงินสดที่ต้องนำส่ง ({reportType === 'daily' ? 'รายวัน' : 'รายเดือน'})
         </h3>
-        <div className="space-y-3 bg-[#ECFDF5] p-4 rounded-2xl border border-[#A7F3D0]">
-          <div className="flex justify-between items-center text-sm">
+        <div className="space-y-2.5 bg-[#ECFDF5] p-3.5 rounded-2xl border border-[#A7F3D0]">
+          <div className="flex justify-between items-center text-xs">
             <span className="font-semibold text-[#1E293B]">เงินสดจากการขาย + รับชำระเครดิต + สายย่อย:</span>
-            <span className="font-bold data-mono text-[#059669]">
+            <span className="font-bold data-mono text-sm text-[#059669]">
               + ฿ {(computedCashRevenue + creditPaymentsTotal + sublineTotal).toLocaleString()}
             </span>
           </div>
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex justify-between items-center text-xs">
             <span className="font-semibold text-[#64748B]">(-) ค่าใช้จ่ายที่จ่ายเป็นเงินสด:</span>
-            <span className="font-bold data-mono text-[#DC2626]">
+            <span className="font-bold data-mono text-sm text-[#DC2626]">
               - ฿ {cashExpenseTotal.toLocaleString()}
             </span>
           </div>
           <div className="pt-2 border-t border-[#A7F3D0] flex justify-between items-center">
-            <span className="text-xs font-bold text-[#047857] uppercase">เงินสดคงเหลือที่ต้องนำส่ง</span>
+            <span className="text-[11px] font-bold text-[#047857] uppercase">เงินสดคงเหลือที่ต้องนำส่ง</span>
             <span
-              className={`text-xl font-bold data-mono ${
+              className={`text-lg font-bold data-mono ${
                 netCashToDeposit >= 0 ? 'text-[#059669]' : 'text-[#DC2626]'
               }`}
             >
