@@ -35,16 +35,17 @@ export const CustomerPriceModal: React.FC<CustomerPriceModalProps> = ({
 
   if (!isOpen || !customer) return null;
 
+  // Saves immediately on every change (same pattern as the global product price editor) — a
+  // previous version only saved on explicit submit, so closing via the X silently discarded
+  // whatever price had just been typed with no warning.
   const handlePriceChange = (key: string, val: number) => {
-    setPrices((prev) => ({
-      ...prev,
-      [key]: isNaN(val) ? 0 : val,
-    }));
+    const updated = { ...prices, [key]: isNaN(val) ? 0 : val };
+    setPrices(updated);
+    onSavePrices(customer.id, updated);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleDone = (e: React.FormEvent) => {
     e.preventDefault();
-    onSavePrices(customer.id, prices);
     onShowToast(`ตั้งราคาเฉพาะสำหรับ "${customer.name}" เรียบร้อยแล้ว`);
     onClose();
   };
@@ -73,7 +74,7 @@ export const CustomerPriceModal: React.FC<CustomerPriceModalProps> = ({
           ร้านค้า / ลูกค้า: <span className="font-bold">{customer.name}</span>
         </p>
 
-        <form onSubmit={handleSave} className="space-y-3 flex-1 overflow-y-auto no-scrollbar pr-1">
+        <form onSubmit={handleDone} className="space-y-3 flex-1 overflow-y-auto no-scrollbar pr-1">
           <div className="space-y-2">
             {products.map((prod) => (
               <div
@@ -124,17 +125,10 @@ export const CustomerPriceModal: React.FC<CustomerPriceModalProps> = ({
             </button>
             <div className="flex gap-2 flex-1">
               <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 py-2.5 rounded-xl border border-[#D2E0EB] text-xs font-bold text-[#1E293B] hover:bg-[#F1F5F9] cursor-pointer"
-              >
-                ยกเลิก
-              </button>
-              <button
                 type="submit"
                 className="flex-1 py-2.5 rounded-xl bg-[#1E3A5F] text-white text-xs font-bold hover:bg-[#152C4A] active:scale-95 transition-all cursor-pointer"
               >
-                บันทึกราคา
+                เสร็จสิ้น
               </button>
             </div>
           </div>
