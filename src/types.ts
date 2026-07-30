@@ -175,6 +175,25 @@ export interface CustomerAccount {
   }[];
 }
 
+/**
+ * One customer's ledger row for ONE specific day. The master CustomerAccount holds the
+ * things that don't change day to day (name, route, custom prices, ice buckets, debts);
+ * everything that IS per-day lives here, keyed by date, so re-opening an earlier date
+ * shows exactly what was entered then instead of the latest day's numbers.
+ */
+export interface DailyCustomerEntry {
+  quantities: IceQuantity;
+  extraAmount: number;
+  totalAmount: number;
+  status: PaymentStatus;
+  statusDetails?: PaymentStatusDetails;
+  /** Set when the payment status was confirmed — drives the "บันทึกแล้ว" badge. */
+  recordedAt?: string;
+}
+
+/** date (YYYY-MM-DD) -> customerId -> that day's ledger row */
+export type DailyLedger = Record<string, Record<string, DailyCustomerEntry>>;
+
 export interface WarehouseItem {
   id: string;
   name: string;

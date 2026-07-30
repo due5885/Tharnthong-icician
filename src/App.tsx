@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AdminUser,
   AttendanceRecord,
   CustomerAccount,
+  DailyCustomerEntry,
+  DailyLedger,
   DeliveryRecord,
   Employee,
   ExpenseCategory,
@@ -31,6 +33,7 @@ import {
 import {
   INITIAL_ICE_PURCHASE_ITEM_TYPES,
   INITIAL_CUSTOMERS,
+  INITIAL_DAILY_LEDGER,
   INITIAL_EXPENSE_CATEGORIES,
   INITIAL_EXPENSES,
   INITIAL_ICE_PRODUCTS,
@@ -85,6 +88,22 @@ const INITIAL_ADMINS: AdminUser[] = [
 ];
 
 const SESSION_KEY = 'tharnthong_session_admin_id';
+
+// CustomerAccount fields that belong to one specific day rather than to the customer itself.
+const DAILY_LEDGER_FIELDS = new Set<string>([
+  'quantities',
+  'extraAmount',
+  'totalAmount',
+  'status',
+  'statusDetails',
+]);
+
+const EMPTY_DAILY_ENTRY: DailyCustomerEntry = {
+  quantities: {},
+  extraAmount: 0,
+  totalAmount: 0,
+  status: 'Cash',
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('operations');
@@ -236,8 +255,43 @@ export default function App() {
       const missing = INITIAL_CUSTOMERS.filter((c) => !existingIds.has(c.id));
       return missing.length ? [...prev, ...missing] : prev;
     });
+    setProducts((prev) => {
+      const existingKeys = new Set(prev.map((p) => p.key));
+      const missing = INITIAL_ICE_PRODUCTS.filter((p) => !existingKeys.has(p.key));
+      return missing.length ? [...prev, ...missing] : prev;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Per-day customer ledger. The customers array above holds only the things that stay the
+  // same day to day; quantities/amount/status live here keyed by date, so picking an earlier
+  // date in ลงบัญชีลูกค้า brings back exactly what was entered on that date.
+  const [dailyLedger, setDailyLedger] = useFirestoreSyncedState<DailyLedger>(
+    'bangsaen_app_data/dailyLedger',
+    'tharnthong_daily_ledger',
+    INITIAL_DAILY_LEDGER
+  );
+
+  // The customer rows as they looked on the selected date. Everything downstream reads this,
+  // so switching the date in ลงบัญชีลูกค้า swaps the whole day's numbers in and out.
+  const customersForSelectedDate = useMemo<CustomerAccount[]>(() => {
+    const day = dailyLedger[selectedDate] || {};
+    return customers.map((c) => {
+      const entry = day[c.id];
+      if (!entry) {
+        return { ...c, ...EMPTY_DAILY_ENTRY, lastUpdated: undefined };
+      }
+      return {
+        ...c,
+        quantities: entry.quantities || {},
+        extraAmount: entry.extraAmount || 0,
+        totalAmount: entry.totalAmount || 0,
+        status: entry.status || 'Cash',
+        statusDetails: entry.statusDetails,
+        lastUpdated: entry.recordedAt ? selectedDate : undefined,
+      };
+    });
+  }, [customers, dailyLedger, selectedDate]);
 
   const [expenses, setExpenses] = useFirestoreSyncedState<ExpenseItem[]>(
     'bangsaen_app_data/expenses',
@@ -539,13 +593,34 @@ export default function App() {
     setRecentDeliveries((prev) => [newRecord, ...prev]);
   };
 
+  // Write one customer's row for the currently selected day, seeding from what's on screen.
+  const upsertDailyEntry = (
+    customer: CustomerAccount,
+    patch: Partial<DailyCustomerEntry>
+  ) => {
+    setDailyLedger((prev) => {
+      const day = prev[selectedDate] || {};
+      const current =
+        day[customer.id] || {
+          quantities: customer.quantities || {},
+          extraAmount: customer.extraAmount || 0,
+          totalAmount: customer.totalAmount || 0,
+          status: 'Cash' as PaymentStatus,
+        };
+      return {
+        ...prev,
+        [selectedDate]: { ...day, [customer.id]: { ...current, ...patch } },
+      };
+    });
+  };
+
   // Handler: Confirm a payment status change from the Customers screen (Cash/Debt/Credit/OldPayment)
   const handleConfirmCustomerStatus = (customer: CustomerAccount, status: PaymentStatusDetails['status']) => {
-    setCustomers((prev) =>
-      prev.map((c) =>
-        c.id === customer.id ? { ...c, status, statusDetails: undefined, lastUpdated: selectedDate } : c
-      )
-    );
+    upsertDailyEntry(customer, {
+      status,
+      statusDetails: undefined,
+      recordedAt: new Date().toISOString(),
+    });
     recordCustomerBillHistory(customer, status);
   };
 
@@ -554,22 +629,14 @@ export default function App() {
     customerId: string,
     details: PaymentStatusDetails
   ) => {
-    const customer = customers.find((c) => c.id === customerId);
-    setCustomers((prev) =>
-      prev.map((c) =>
-        c.id === customerId
-          ? {
-              ...c,
-              status: 'NewAndOld',
-              statusDetails: details,
-              lastUpdated: selectedDate,
-            }
-          : c
-      )
-    );
-    if (customer) {
-      recordCustomerBillHistory(customer, 'NewAndOld', details);
-    }
+    const customer = customersForSelectedDate.find((c) => c.id === customerId);
+    if (!customer) return;
+    upsertDailyEntry(customer, {
+      status: 'NewAndOld',
+      statusDetails: details,
+      recordedAt: new Date().toISOString(),
+    });
+    recordCustomerBillHistory(customer, 'NewAndOld', details);
   };
 
   // Admin Handlers
@@ -695,16 +762,48 @@ export default function App() {
     );
   };
 
-  // Handler: Update customer record from Customers screen
+  // Handler: Update customer record from Customers screen. Fields that belong to the selected
+  // day go to the daily ledger; everything else (name, buckets, debts…) stays on the master row.
   const handleUpdateCustomer = (id: string, updated: Partial<CustomerAccount>) => {
-    setCustomers((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
-    );
+    const dailyPart: Partial<DailyCustomerEntry> = {};
+    const basePart: Partial<CustomerAccount> = {};
+
+    (Object.keys(updated) as (keyof CustomerAccount)[]).forEach((key) => {
+      if (DAILY_LEDGER_FIELDS.has(key as string)) {
+        (dailyPart as Record<string, unknown>)[key as string] = updated[key];
+      } else {
+        (basePart as Record<string, unknown>)[key as string] = updated[key];
+      }
+    });
+
+    if (Object.keys(basePart).length > 0) {
+      setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, ...basePart } : c)));
+    }
+    if (Object.keys(dailyPart).length > 0) {
+      setDailyLedger((prev) => {
+        const day = prev[selectedDate] || {};
+        return {
+          ...prev,
+          [selectedDate]: {
+            ...day,
+            [id]: { ...(day[id] || EMPTY_DAILY_ENTRY), ...dailyPart },
+          },
+        };
+      });
+    }
   };
 
   // Handler: Delete Customer
   const handleDeleteCustomer = (id: string) => {
     setCustomers((prev) => prev.filter((c) => c.id !== id));
+    setDailyLedger((prev) => {
+      const next: DailyLedger = {};
+      Object.entries(prev).forEach(([date, entries]) => {
+        const { [id]: _removed, ...rest } = entries;
+        next[date] = rest;
+      });
+      return next;
+    });
   };
 
   // Handler: Save custom customer prices
@@ -831,7 +930,7 @@ export default function App() {
     selectedDate,
     stats,
     summaryData,
-    customers,
+    customers: customersForSelectedDate,
     expenses,
     monthlyExpenses,
     recentDeliveries,
@@ -880,7 +979,7 @@ export default function App() {
           <OperationsView
             stats={{ ...stats, shiftWorker: activeAdminName }}
             recentDeliveries={recentDeliveries}
-            customers={customers}
+            customers={customersForSelectedDate}
             products={products}
             routes={routes}
             truckRecords={truckRecords}
@@ -899,7 +998,7 @@ export default function App() {
 
         {activeTab === 'customers' && (
           <CustomersView
-            customers={customers}
+            customers={customersForSelectedDate}
             routes={routes}
             products={products}
             statusLabels={statusLabels}
@@ -923,7 +1022,7 @@ export default function App() {
 
         {activeTab === 'creditCustomers' && (
           <CreditCustomersView
-            customers={customers}
+            customers={customersForSelectedDate}
             deliveries={recentDeliveries}
             onUpdateCustomer={handleUpdateCustomer}
             onShowToast={showToast}
@@ -934,7 +1033,7 @@ export default function App() {
 
         {activeTab === 'customerDetails' && (
           <CustomerDetailsView
-            customers={customers}
+            customers={customersForSelectedDate}
             routes={routes}
             recentDeliveries={recentDeliveries}
             selectedDate={selectedDate}
@@ -961,7 +1060,7 @@ export default function App() {
             recentDeliveries={recentDeliveries}
             expenses={expenses}
             monthlyExpenses={monthlyExpenses}
-            customers={customers}
+            customers={customersForSelectedDate}
             routes={routes}
             products={products}
             roleLevel={roleLevel}

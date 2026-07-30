@@ -1,5 +1,6 @@
 import {
   CustomerAccount,
+  DailyLedger,
   DeliveryRecord,
   ExpenseCategory,
   ExpenseItem,
@@ -32,6 +33,8 @@ export const INITIAL_ICE_PRODUCTS: IceProduct[] = [
   { id: 'PROD-5', key: 'smallTube', labelTh: 'หลอดเล็ก', unit: 'ถุง', icon: 'view_week', imageUrl: imgSmallTube, pricePerUnit: 30, isSystem: true },
   { id: 'PROD-6', key: 'pack', labelTh: 'แพ็ค', unit: 'แพ็ค', icon: 'inventory_2', imageUrl: imgPack, pricePerUnit: 25, isSystem: true },
   { id: 'PROD-7', key: 'tubeCrushed', labelTh: 'หลอดโม่', unit: 'ถุง', icon: 'grain', imageUrl: imgTubeCrushed, pricePerUnit: 30, isSystem: true },
+  // ลูกค้าบางร้านไม่ซื้อยกกระสอบ ขอแบ่งซื้อถุงเล็กข้างในกระสอบ (ราคาต่อถุงตั้งแยกรายร้าน)
+  { id: 'PROD-8', key: 'packSplit', labelTh: 'หลอดแพ็คแบ่ง', unit: 'ถุง', icon: 'shopping_bag', imageUrl: imgPack, pricePerUnit: 5, isSystem: true },
 ];
 
 export const INITIAL_ROUTES: RouteItem[] = [
@@ -64,6 +67,9 @@ export const INITIAL_OVERALL_SUMMARY: SummaryOperationsData = {
 export const INITIAL_MONTHLY_FIXED_EXPENSES: MonthlyFixedExpense[] = [];
 
 export const INITIAL_RECENT_DELIVERIES: DeliveryRecord[] = [];
+
+// Per-day customer ledger starts empty; each day's rows are written as they're entered.
+export const INITIAL_DAILY_LEDGER: DailyLedger = {};
 
 export const INITIAL_TRUCK_RECORDS: TruckStockRecord[] = [];
 
