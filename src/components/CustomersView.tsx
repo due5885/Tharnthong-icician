@@ -5,6 +5,14 @@ import { ConfirmStatusModal } from './ConfirmStatusModal';
 import { canEditPaymentStatusLabels } from '../lib/permissions';
 import { DateInput } from './DateInput';
 
+const STATUS_BADGE_CLASS: Record<PaymentStatus, string> = {
+  Cash: 'bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]',
+  Debt: 'bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]',
+  Credit: 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]',
+  OldPayment: 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]',
+  NewAndOld: 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]',
+};
+
 interface CustomersViewProps {
   customers: CustomerAccount[];
   routes: RouteItem[];
@@ -324,6 +332,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
         ) : (
           filteredCustomers.map((customer) => {
             const hasCustomPrice = customer.customPrices && Object.keys(customer.customPrices).length > 0;
+            const isRecordedToday = customer.lastUpdated === selectedDate;
 
             return (
               <div
@@ -345,6 +354,23 @@ export const CustomersView: React.FC<CustomersViewProps> = ({
                         {hasCustomPrice && (
                           <span className="text-[10px] font-bold bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A] px-2 py-0.5 rounded-full">
                             ราคาส่วนตัว
+                          </span>
+                        )}
+                        {isRecordedToday ? (
+                          <>
+                            <span className="text-[10px] font-bold bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0] px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                              <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                              บันทึกแล้ว
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_BADGE_CLASS[customer.status]}`}
+                            >
+                              {statusLabels[customer.status]}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-[10px] font-bold bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0] px-2 py-0.5 rounded-full">
+                            ยังไม่บันทึก
                           </span>
                         )}
                       </div>
