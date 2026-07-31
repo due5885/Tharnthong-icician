@@ -122,13 +122,16 @@ export default function App() {
   // 'app_data/*' docs even though both currently share the same Firebase project.
 
   // Ice Products State
-  const [products, setProducts] = useFirestoreSyncedState<IceProduct[]>(
+  const [products, setProducts, productsReady] = useFirestoreSyncedState<IceProduct[]>(
     'bangsaen_app_data/products',
     'tharnthong_ice_products',
     INITIAL_ICE_PRODUCTS
   );
   // Restore imageUrl for any product synced/saved from before images were bundled in.
+  // Waits for the server copy — running this against stale localStorage would push this
+  // device's old product list over everyone else's.
   useEffect(() => {
+    if (!productsReady) return;
     setProducts((prev) => {
       const needsFix = prev.some((p) => !p.imageUrl);
       if (!needsFix) return prev;
@@ -141,10 +144,10 @@ export default function App() {
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [productsReady]);
 
   // Delivery Routes State
-  const [routes, setRoutes] = useFirestoreSyncedState<RouteItem[]>(
+  const [routes, setRoutes, routesReady] = useFirestoreSyncedState<RouteItem[]>(
     'bangsaen_app_data/routes',
     'tharnthong_routes',
     INITIAL_ROUTES
@@ -165,19 +168,20 @@ export default function App() {
   );
 
   // Ice Suppliers (สายบางแสนซื้อน้ำแข็งมาขายต่อ ไม่ได้ผลิตเอง) & itemized daily purchase records
-  const [iceSuppliers, setIceSuppliers] = useFirestoreSyncedState<IceSupplier[]>(
+  const [iceSuppliers, setIceSuppliers, iceSuppliersReady] = useFirestoreSyncedState<IceSupplier[]>(
     'bangsaen_app_data/iceSuppliers',
     'tharnthong_ice_suppliers',
     INITIAL_ICE_SUPPLIERS
   );
   // Migration guard: suppliers synced/saved before itemPrices existed won't have the field.
   useEffect(() => {
+    if (!iceSuppliersReady) return;
     setIceSuppliers((prev) => {
       const needsFix = prev.some((s) => !s.itemPrices);
       return needsFix ? prev.map((s) => ({ ...s, itemPrices: s.itemPrices || {} })) : prev;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [iceSuppliersReady]);
 
   const [icePurchases, setIcePurchases] = useFirestoreSyncedState<IcePurchaseRecord[]>(
     'bangsaen_app_data/icePurchases',
@@ -191,7 +195,7 @@ export default function App() {
   );
 
   // Admin Management state
-  const [admins, setAdmins] = useFirestoreSyncedState<AdminUser[]>(
+  const [admins, setAdmins, adminsReady] = useFirestoreSyncedState<AdminUser[]>(
     'bangsaen_app_data/admins',
     'tharnthong_admins',
     INITIAL_ADMINS
@@ -203,12 +207,13 @@ export default function App() {
   // so it works correctly across devices sharing the same synced doc: it's a no-op forever once
   // an accountant-role admin exists, so admins added later through the UI are never touched.
   useEffect(() => {
+    if (!adminsReady) return;
     const hasAccountant = admins.some((a) => a.roleLevel === 'accountant');
     if (!hasAccountant) {
       setAdmins(INITIAL_ADMINS);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [adminsReady]);
 
   // Login session (sessionStorage only — closing the tab/browser requires a fresh login)
   const [activeAdminId, setActiveAdminId] = useState<string | null>(() => {
@@ -234,7 +239,7 @@ export default function App() {
     INITIAL_RECENT_DELIVERIES
   );
 
-  const [customers, setCustomers] = useFirestoreSyncedState<CustomerAccount[]>(
+  const [customers, setCustomers, customersReady] = useFirestoreSyncedState<CustomerAccount[]>(
     'bangsaen_app_data/customers',
     'tharnthong_customers',
     INITIAL_CUSTOMERS
@@ -245,6 +250,7 @@ export default function App() {
   // their own, since synced state takes precedence over INITIAL_*. This only adds what's missing
   // by id — it never touches or removes anything already saved.
   useEffect(() => {
+    if (!routesReady || !customersReady || !productsReady) return;
     setRoutes((prev) => {
       const existingIds = new Set(prev.map((r) => r.id));
       const missing = INITIAL_ROUTES.filter((r) => !existingIds.has(r.id));
@@ -261,7 +267,7 @@ export default function App() {
       return missing.length ? [...prev, ...missing] : prev;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [routesReady, customersReady, productsReady]);
 
   // Per-day customer ledger. The customers array above holds only the things that stay the
   // same day to day; quantities/amount/status live here keyed by date, so picking an earlier
@@ -306,29 +312,31 @@ export default function App() {
   );
 
   // Payment Status Labels (editable by owner/accountant)
-  const [statusLabels, setStatusLabels] = useFirestoreSyncedState<PaymentStatusLabels>(
+  const [statusLabels, setStatusLabels, statusLabelsReady] = useFirestoreSyncedState<PaymentStatusLabels>(
     'bangsaen_app_data/statusLabels',
     'tharnthong_status_labels',
     DEFAULT_PAYMENT_STATUS_LABELS
   );
   // Fill in any label keys added after a device/doc was first saved.
   useEffect(() => {
+    if (!statusLabelsReady) return;
     setStatusLabels((prev) => ({ ...DEFAULT_PAYMENT_STATUS_LABELS, ...prev }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [statusLabelsReady]);
 
   // Warehouse Items & Logs State
-  const [warehouseItems, setWarehouseItems] = useFirestoreSyncedState<WarehouseItem[]>(
+  const [warehouseItems, setWarehouseItems, warehouseItemsReady] = useFirestoreSyncedState<WarehouseItem[]>(
     'bangsaen_app_data/warehouseItems',
     'tharnthong_warehouse_items',
     INITIAL_WAREHOUSE_ITEMS
   );
   useEffect(() => {
+    if (!warehouseItemsReady) return;
     setWarehouseItems((prev) =>
       prev.filter((i) => i.category !== 'น้ำแข็งสำเร็จรูป/ห้องเย็น' && i.category !== 'ถุง/บรรจุภัณฑ์')
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [warehouseItemsReady]);
 
   const [warehouseLogs, setWarehouseLogs] = useFirestoreSyncedState<WarehouseLog[]>(
     'bangsaen_app_data/warehouseLogs',
