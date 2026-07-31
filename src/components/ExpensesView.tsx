@@ -1,24 +1,32 @@
 import React, { useState } from 'react';
 import { ExpenseCategory, ExpenseItem, RouteItem } from '../types';
 import { useHorizontalWheelScroll } from '../lib/useHorizontalWheelScroll';
+import { DateInput } from './DateInput';
 
 interface ExpensesViewProps {
   expenses: ExpenseItem[];
   routes?: RouteItem[];
   categories: ExpenseCategory[];
+  selectedDate: string;
+  onDateChange: (date: string) => void;
   onOpenAddExpenseModal: () => void;
   onOpenCategoryManager: () => void;
   onDeleteExpense?: (id: string) => void;
 }
 
 export const ExpensesView: React.FC<ExpensesViewProps> = ({
-  expenses,
+  expenses: allExpenses,
   routes = [],
   categories: expenseCategories,
+  selectedDate,
+  onDateChange,
   onOpenAddExpenseModal,
   onOpenCategoryManager,
   onDeleteExpense,
 }) => {
+  // This screen is "รายจ่ายประจำวัน" — it must only ever show the day that's selected,
+  // otherwise every day's fuel piles up into one list and the daily total is wrong.
+  const expenses = allExpenses.filter((exp) => exp.date === selectedDate);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedRouteFilter, setSelectedRouteFilter] = useState<string>('All');
   const tableScrollRef = useHorizontalWheelScroll<HTMLDivElement>();
@@ -63,6 +71,15 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
           <p className="text-xs text-[#64748B] mt-1">
             ลงบันทึกรายจ่ายแยกตามสายส่งน้ำแข็งแต่ละสาย แล้วรวบรวมสรุปภาพรวมทั้งหมด
           </p>
+          <div className="flex items-center gap-2 mt-2 text-xs md:text-sm">
+            <span className="material-symbols-outlined text-sm text-[#0284C7]">calendar_today</span>
+            <span className="font-bold text-[#1E3A5F]">แสดงรายจ่ายของวันที่:</span>
+            <DateInput
+              value={selectedDate}
+              onChange={onDateChange}
+              className="data-mono font-bold bg-[#E0F2FE] text-[#0369A1] px-2 py-0.5 rounded-lg border border-[#BAE6FD] cursor-pointer w-24"
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-2">

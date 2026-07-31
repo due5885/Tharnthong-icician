@@ -1089,6 +1089,8 @@ export default function App() {
             expenses={expenses}
             routes={routes}
             categories={expenseCategories}
+            selectedDate={selectedDate}
+            onDateChange={(d) => setSelectedDate(d)}
             onOpenAddExpenseModal={() => setIsAddExpenseOpen(true)}
             onOpenCategoryManager={() => setIsExpenseCategoryManagerOpen(true)}
             onDeleteExpense={handleDeleteExpense}
